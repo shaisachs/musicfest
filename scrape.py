@@ -21,42 +21,49 @@ for row in tablebody.findAll('tr'):
 
     cells = row.findAll('td')
 
-    image = cells[0]
-    band = cells[1]
-    genresRaw = cells[2]
-    address = cells[3]
-    time = cells[4]
+    if not cells:
+        continue
 
-    show['bandName'] = band.a.string
+    imageCell = cells[0]
+    bandInfoCell = cells[1]
+    genresCell = cells[2]
+    addressCell = cells[3].find(class_='street-address')
+    timeCell = cells[4]
 
-    bandUrl = band.a['href']
-    if bandUrl.startswith('/node'):
-        bandUrl = 'https://www.somervilleartscouncil.org' + bandUrl
+    if bandInfoCell and bandInfoCell.a and bandInfoCell.a.string:
+        show['bandName'] = bandInfoCell.a.string
 
-    show['bandUrl'] = bandUrl
+    if bandInfoCell and bandInfoCell.a and bandInfoCell.a['href']:
+        bandUrl = bandInfoCell.a['href']
 
-    if image and image.a and image.a.img:
-        show['bandImage'] = image.a.img['src']
+        if bandUrl.startswith('/node'):
+            bandUrl = 'https://www.somervilleartscouncil.org' + bandUrl
 
-    streetaddress = address.find(class_='street-address')
+        show['bandUrl'] = bandUrl
 
-    if streetaddress and streetaddress.string:
-        show['streetAddress'] = streetaddress.string.strip()
+    if imageCell and imageCell.a and imageCell.a.img:
+        show['bandImage'] = imageCell.a.img['src']
 
-    genres = []
-    for genreRaw in genresRaw.findAll('a'):
-        if genreRaw and genreRaw.string:
-            genres.append(genreRaw.string)
+    if addressCell and addressCell.string:
+        show['streetAddress'] = addressCell.string.strip()
 
-    show['genres'] = genres
+    if genresCell:
+        genres = []
+        for genreLink in genresCell.findAll('a'):
+            if genreLink and genreLink.string:
+                genres.append(genreLink.string)
 
-    startTime = time.find(class_='date-display-start')
-    if startTime and startTime.string:
-        show['startTime'] = startTime.string
+        show['genres'] = genres
 
-    endTime = time.find(class_='date-display-end')
-    if endTime and endTime.string:
-        show['endTime'] = endTime.string
+    if timeCell:
+        startTimeDiv = timeCell.find(class_='date-display-start')
+        if startTimeDiv and startTimeDiv.string:
+            show['startTime'] = startTimeDiv.string
+
+    if timeCell:
+        endTimeDiv = timeCell.find(class_='date-display-end')
+        if endTimeDiv and endTimeDiv.string:
+            show['endTime'] = endTimeDiv.string
 
     shows.append(show)
 
