@@ -30,8 +30,10 @@ for row in tablebody.findAll('tr'):
     addressCell = cells[3].find(class_='street-address')
     timeCell = cells[4]
 
+    band = {}
+
     if bandInfoCell and bandInfoCell.a and bandInfoCell.a.string:
-        show['bandName'] = bandInfoCell.a.string
+        band['name'] = bandInfoCell.a.string
 
     if bandInfoCell and bandInfoCell.a and bandInfoCell.a['href']:
         bandUrl = bandInfoCell.a['href']
@@ -39,13 +41,24 @@ for row in tablebody.findAll('tr'):
         if bandUrl.startswith('/node'):
             bandUrl = 'https://www.somervilleartscouncil.org' + bandUrl
 
-        show['bandUrl'] = bandUrl
+        band['url'] = bandUrl
 
     if imageCell and imageCell.a and imageCell.a.img:
-        show['bandImage'] = imageCell.a.img['src']
+        band['image'] = imageCell.a.img['src']
+
+    if band:
+        band['@type'] = 'MusicGroup'
+        show['performer'] = band
 
     if addressCell and addressCell.string:
-        show['streetAddress'] = addressCell.string.strip()
+        venue = {}
+        venue['@type'] = 'Place'
+        venue['address'] =  {}
+        venue['address']['@type'] = 'PostalAddress'
+        venue['address']['streetAddress'] = addressCell.string.strip()
+        venue['address']['addressLocality'] = 'Somerville'
+        venue['address']['addressRegion'] = 'MA'
+        venue['address']['addressCountry'] = 'US'
 
     if genresCell:
         genres = []
@@ -58,12 +71,15 @@ for row in tablebody.findAll('tr'):
     if timeCell:
         startTimeDiv = timeCell.find(class_='date-display-start')
         if startTimeDiv and startTimeDiv.string:
-            show['startTime'] = startTimeDiv.string
+            show['startDate'] = startTimeDiv.string
 
     if timeCell:
         endTimeDiv = timeCell.find(class_='date-display-end')
         if endTimeDiv and endTimeDiv.string:
-            show['endTime'] = endTimeDiv.string
+            show['endDate'] = endTimeDiv.string
+
+    show['@context'] = 'http://schema.org/'
+    show['@type'] = 'Event'
 
     shows.append(show)
 
