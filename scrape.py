@@ -2,6 +2,14 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
+def canonicaltime(text):
+    if not text:
+        return nil
+
+    hour = int(text.upper().replace(':00 PM', '').replace(':30 PM', ''))
+    return hour + 12
+
+
 mapurl = 'https://www.somervilleartscouncil.org/porchfest/map/2018'
 page = requests.get(mapurl)
 parsedpage = BeautifulSoup(page.content, 'html.parser')
@@ -49,34 +57,39 @@ for row in tablebody.findAll('tr'):
     if band:
         band['@type'] = 'MusicGroup'
         show['performer'] = band
+        show['name'] = band['name']
 
     if addressCell and addressCell.string:
         venue = {}
         venue['@type'] = 'Place'
-        venue['address'] =  {}
+        venue['address'] = {}
         venue['address']['@type'] = 'PostalAddress'
         venue['address']['streetAddress'] = addressCell.string.strip()
         venue['address']['addressLocality'] = 'Somerville'
         venue['address']['addressRegion'] = 'MA'
         venue['address']['addressCountry'] = 'US'
+        show['location'] = venue
 
-    if genresCell:
+    if band and genresCell:
         genres = []
         for genreLink in genresCell.findAll('a'):
             if genreLink and genreLink.string:
                 genres.append(genreLink.string)
 
-        show['genres'] = genres
+        show['performer']['genre'] = genres
 
     if timeCell:
         startTimeDiv = timeCell.find(class_='date-display-start')
         if startTimeDiv and startTimeDiv.string:
-            show['startDate'] = startTimeDiv.string
+            startHour = canonicaltime(startTimeDiv.string)
+            show['startDate'] = '2018-05-13T' + str(startHour) + ':00:00-04:00'
 
     if timeCell:
         endTimeDiv = timeCell.find(class_='date-display-end')
         if endTimeDiv and endTimeDiv.string:
-            show['endDate'] = endTimeDiv.string
+            endHour = canonicaltime(endTimeDiv.string)
+            if endHour:
+                show['endDate'] = '2018-05-13T' + str(endHour) + ':00:00-04:00'
 
     show['@context'] = 'http://schema.org/'
     show['@type'] = 'Event'
